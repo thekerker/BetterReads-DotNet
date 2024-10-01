@@ -1,0 +1,60 @@
+﻿@page "/weather"
+@attribute [StreamRendering]
+@using BetterReads.Shared.Models;
+@using Newtonsoft.Json;
+@inject IHttpClientFactory ClientFactory
+
+<PageTitle>Weather</PageTitle>
+
+<h1>Weather</h1>
+
+<p>This component demonstrates showing data.</p>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<WeatherForecast>? forecasts = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:5002/weatherforecast");
+        request.Headers.Add("Accept", "application/json");
+        request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode) {
+            var responseString = await response.Content.ReadAsStringAsync();
+            forecasts = JsonConvert.DeserializeObject<IEnumerable<WeatherForecast>>(responseString);
+        }
+    }
+}
